@@ -44,7 +44,11 @@
 					powerButtonClose: true,
 					enablePreventScreenSaver: false,
 					landscape: false
-				};			
+				};
+
+				var initialTimeout = null;
+				var toggleTimeout = null;
+				var interval = null;
 				
 				//-------------------------------------------------------------
 				// Copy supplied config properties		
@@ -130,6 +134,14 @@
 						'yoshibutton'
 					);
 				}			
+
+				function toggleWifi() {
+					kindle.net.setWirelessState('on');
+
+					toggleTimeout = setTimeout(function() {
+						kindle.net.setWirelessState('off');
+					}, 4 * 60 * 1000)
+				}
 						
 				//=============================================================
 				// Event handlers
@@ -145,9 +157,11 @@
 						requestPreventScreenSaverState();
 					
 					// Enable networking if desired
-					if( sessionSettings.enableWireless )
-						kindle.net.setWirelessState('on');
-					
+					// if( sessionSettings.enableWireless )
+					// 	kindle.net.setWirelessState('on');
+
+					toggleWifi()
+
 					// Load url 
 					kindle.chrome.createContentWindow(sessionSettings.url);
 					
@@ -167,6 +181,16 @@
 				// restore status bar on close
 				function closeApp() 
 				{ 
+					if (initialTimeout !== null) {
+						clearTimeout(initialTimeout);
+					}
+					if (toggleTimeout !== null) {
+						clearTimeout(toggleTimeout);
+					}
+					if (interval !== null) {
+						clearInterval(interval);
+					}
+
 					if( preventScreenSaverStateBackup !== null )
 						setPreventScreenSaverState(preventScreenSaverStateBackup);
 				
