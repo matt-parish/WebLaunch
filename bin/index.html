@@ -177,7 +177,15 @@
 					toggleWifiHourly()
 
 					// Load url 
-					kindle.chrome.createContentWindow(sessionSettings.url);
+
+					// Get state
+					pillowRun(
+						"return nativeBridge.getIntLipcProperty('com.lab126.powerd', 'battLevel');", 
+						function(state)
+						{
+							kindle.chrome.createContentWindow(sessionSettings.url + "?battery=" + state);
+						}
+					);
 					
 					// Set window title
 					kindle.chrome.setTitleBar('', sessionSettings.title);
