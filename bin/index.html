@@ -48,6 +48,7 @@
 
 				var hourlyTimeout = null;
 				var toggleTimeout = null;
+				var batteryTimeout = null;
 				
 				//-------------------------------------------------------------
 				// Copy supplied config properties		
@@ -138,22 +139,32 @@
 					// turn it on
 					kindle.net.setWirelessState('on');
 
-					// turn it off in 4 minutes
+					// turn it off in 1 minutes
 					toggleTimeout = setTimeout(function() {
 						kindle.net.setWirelessState('off');
-					}, 4 * 60 * 1000)
+					}, 1 * 60 * 1000)
+
+					// send a battery update in 10 seconds
+					batteryTimeout = setTimeout(function() {
+						pillowRun(
+							"return nativeBridge.getIntLipcProperty('com.lab126.powerd', 'battLevel');",
+							function(state)
+							{
+								var xhttp = new XMLHttpRequest();
+								xhttp.open("GET", "myurl?battery=" + state);
+								xhttp.send();
+							}
+						);
+					}, 10 * 1000)
 
 					// get current time, and how far away the next full hour is
 					// (e.g. 10:00:00, 11:00:00, ....)
 					var now = new Date()
 					var nextHourExactlyInMs = (new Date()).setHours(now.getHours() + 1, 0, 0, 0)
 
-					// set another call of toggleWifi for one minute before
-					// the hour mark. (e.g. 09:59:00, 10:59:00, ...)
-					// this allows for 1 minute of wifi connection, 2 minutes to
-					// complete the request (assuming sent exactly at next hour mark)
-					// and 1 minute for any delays.
-					hourlyTimeout = setTimeout(toggleWifiHourly, nextHourExactlyInMs - 60000 - now.getTime())
+					// set another call of toggleWifi for the next hour mark
+					// (e.g. 09:59:00, 10:59:00, ...)
+					hourlyTimeout = setTimeout(toggleWifiHourly, nextHourExactlyInMs - now.getTime())
 				}
 						
 				//=============================================================
@@ -177,15 +188,7 @@
 					toggleWifiHourly()
 
 					// Load url 
-
-					// Get state
-					pillowRun(
-						"return nativeBridge.getIntLipcProperty('com.lab126.powerd', 'battLevel');", 
-						function(state)
-						{
-							kindle.chrome.createContentWindow(sessionSettings.url + "?battery=" + state);
-						}
-					);
+					kindle.chrome.createContentWindow(sessionSettings.url);
 					
 					// Set window title
 					kindle.chrome.setTitleBar('', sessionSettings.title);
@@ -208,6 +211,9 @@
 					}
 					if (toggleTimeout !== null) {
 						clearTimeout(toggleTimeout);
+					}
+					if (batteryTimeout !== null) {
+						clearTimeout(batteryTimeout);
 					}
 
 					if( preventScreenSaverStateBackup !== null )
